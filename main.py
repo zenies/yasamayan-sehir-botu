@@ -27,14 +27,9 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Gemini AI istemci ayarı
-gemini_client = None
+# Gemini AI istemci ayarı (En güncel yöntem)
 api_key = os.environ.get("GEMINI_API_KEY")
-if api_key:
-    try:
-        gemini_client = genai.Client(api_key=api_key)
-    except Exception as e:
-        print(f"Gemini Client Başlatma Hatası: {e}")
+gemini_client = genai.Client(api_key=api_key) if api_key else None
 
 OTOMATİK_MESAJLAR = [
     "Hey şehir halkı! Bugün enerji seviyeniz nasıl?",
@@ -65,18 +60,21 @@ async def on_message(message):
 
     if bot.user.mentioned_in(message):
         if not gemini_client:
-            await message.reply("⚠️ **Gemini API Anahtarı bulunamadı!** Render ayarlarındaki 'Environment Variables' kısmını kontrol et.")
-        else:
-            prompt = f"Sen 'Yaşayan Şehir' adlı Discord sunucusunun yapay zeka ruhusun. Esprili, samimi, insanları sunucuda tutmak isteyen ve sıcakkanlı bir karaktersin. Kullanıcının mesajına kısa ve dikkat çekici bir yanıt ver. Kullanıcı mesajı: {message.content}"
-            try:
-                response = gemini_client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt
-                )
-                await message.reply(response.text)
-            except Exception as e:
-                print(f"Gemini API Yanıt Hatası: {e}")
-                await message.reply(f"⚠️ **Hata Detayı:** {e}")
+            await message.reply("⚠️ API anahtarı okunamadı.")
+            return
+
+        prompt = f"Sen 'Yaşayan Şehir' adlı Discord sunucusunun yapay zeka ruhusun. Esprili, samimi, insanları sunucuda tutmak isteyen ve sıcakkanlı bir karaktersin. Kullanıcının mesajına kısa ve dikkat çekici bir yanıt ver. Kullanıcı mesajı: {message.content}"
+        
+        try:
+            # En güncel google-genai kütüphane çağrısı
+            response = gemini_client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
+            await message.reply(response.text)
+        except Exception as e:
+            print(f"Hata: {e}")
+            await message.reply(f"Şu an hatlar yoğun ama buradayım! ⚡")
 
     await bot.process_commands(message)
 
