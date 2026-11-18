@@ -39,7 +39,6 @@ OTOMATİK_MESAJLAR = [
     "Sessizliği bozmak benden! Kimler burada, bir ses verin bakalım!"
 ]
 
-# Google yoğun olduğunda botun doğal olarak vereceği esprili kaçış cevapları
 YOGUNLUK_CEVAPLARI = [
     "Kahve molasındayım, birazdan buradayım dostum! ☕",
     "Şehrin altyapısında ufak bir internet kopması oldu, dalgınlığıma ver. ⚡",
@@ -50,13 +49,30 @@ YOGUNLUK_CEVAPLARI = [
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} şehre ayak bastı ve sistemler aktif!")
+    
+    # Bot açıldığında sunucuda eksik kanalları otomatik kurma görevi
+    for guild in bot.guilds:
+        existing_channels = [c.name for c in guild.channels]
+        
+        # Kategori yoksa oluştur
+        category = discord.utils.get(guild.categories, name="🏛️ YAŞAYAN ŞEHİR")
+        if not category:
+            category = await guild.create_category("🏛️ YAŞAYAN ŞEHİR")
+            
+        # Kanalları kontrol et ve yoksa yarat
+        required_channels = ["genel-sohbet", "oyun-odası", "itiraf-ve-sohbet"]
+        for ch_name in required_channels:
+            if ch_name not in existing_channels:
+                await guild.create_text_channel(ch_name, category=category)
+                print(f"Oluşturulan kanal: {ch_name}")
+
     otomatik_sohbet_dongusu.start()
 
 @tasks.loop(hours=2)
 async def otomatik_sohbet_dongusu():
     for guild in bot.guilds:
         for channel in guild.text_channels:
-            if "sohbet" in channel.name.lower() or "genel" in channel.name.lower() or "chat" in channel.name.lower():
+            if "sohbet" in channel.name.lower() or "genel" in channel.name.lower():
                 secilen_mesaj = random.choice(OTOMATİK_MESAJLAR)
                 await channel.send(f"🤖 **[Şehir Sesi]** {secilen_mesaj}")
                 break
@@ -80,7 +96,6 @@ async def on_message(message):
             )
             await message.reply(response.text)
         except Exception as e:
-            # Google tarafı yoğunluk verirse bot asla hata kodu vermez, doğal konuşur!
             dogal_cevap = random.choice(YOGUNLUK_CEVAPLARI)
             await message.reply(dogal_cevap)
 
