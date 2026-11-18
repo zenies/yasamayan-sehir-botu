@@ -6,7 +6,7 @@ from google import genai
 from threading import Thread
 from flask import Flask
 
-# Ücretsiz web sunucusu (Render'ın uyumaması ve ücretsiz host etmesi için)
+# Ücretsiz web sunucusu
 app = Flask('')
 
 @app.route('/')
@@ -29,8 +29,12 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Gemini AI istemci ayarı
 gemini_client = None
-if os.environ.get("GEMINI_API_KEY"):
-    gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+api_key = os.environ.get("GEMINI_API_KEY")
+if api_key:
+    try:
+        gemini_client = genai.Client(api_key=api_key)
+    except Exception as e:
+        print(f"Gemini Client Başlatma Hatası: {e}")
 
 OTOMATİK_MESAJLAR = [
     "Hey şehir halkı! Bugün enerji seviyeniz nasıl?",
@@ -59,20 +63,23 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    if bot.user.mentioned_in(message) and gemini_client:
-        prompt = f"Sen 'Yaşayan Şehir' adlı Discord sunucusunun yapay zeka ruhusun. Esprili, samimi, insanları sunucuda tutmak isteyen ve sıcakkanlı bir karaktersin. Kullanıcının mesajına kısa ve dikkat çekici bir yanıt ver. Kullanıcı mesajı: {message.content}"
-        try:
-            response = gemini_client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt
-            )
-            await message.reply(response.text)
-        except Exception as e:
-            await message.reply("Şu an şehirdeki enerji hatlarında bir parazit var ama buradayım! ⚡")
+    if bot.user.mentioned_in(message):
+        if not gemini_client:
+            await message.reply("⚠️ **Gemini API Anahtarı bulunamadı!** Render ayarlarındaki 'Environment Variables' kısmını kontrol et.")
+        else:
+            prompt = f"Sen 'Yaşayan Şehir' adlı Discord sunucusunun yapay zeka ruhusun. Esprili, samimi, insanları sunucuda tutmak isteyen ve sıcakkanlı bir karaktersin. Kullanıcının mesajına kısa ve dikkat çekici bir yanıt ver. Kullanıcı mesajı: {message.content}"
+            try:
+                response = gemini_client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt
+                )
+                await message.reply(response.text)
+            except Exception as e:
+                print(f"Gemini API Yanıt Hatası: {e}")
+                await message.reply(f"⚠️ **Hata Detayı:** {e}")
 
     await bot.process_commands(message)
 
-# Önce web sunucusunu başlat, ardından botu çalıştır
 if __name__ == "__main__":
     keep_alive()
     TOKEN = os.environ.get("DISCORD_TOKEN")
