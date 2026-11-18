@@ -39,6 +39,14 @@ OTOMATİK_MESAJLAR = [
     "Sessizliği bozmak benden! Kimler burada, bir ses verin bakalım!"
 ]
 
+# Google yoğun olduğunda botun doğal olarak vereceği esprili kaçış cevapları
+YOGUNLUK_CEVAPLARI = [
+    "Kahve molasındayım, birazdan buradayım dostum! ☕",
+    "Şehrin altyapısında ufak bir internet kopması oldu, dalgınlığıma ver. ⚡",
+    "Şu an kafam biraz dolu, sokaklarda tur atıp geliyorum! 🏙️",
+    "Aşırı bir kalabalık var, herkes bana yükleniyor! Soluklanıp döneceğim. 😄"
+]
+
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} şehre ayak bastı ve sistemler aktif!")
@@ -72,8 +80,9 @@ async def on_message(message):
             )
             await message.reply(response.text)
         except Exception as e:
-            print(f"Hata Detayı: {e}")
-            await message.reply(f"⚠️ **Hata:** {e}")
+            # Google tarafı yoğunluk verirse bot asla hata kodu vermez, doğal konuşur!
+            dogal_cevap = random.choice(YOGUNLUK_CEVAPLARI)
+            await message.reply(dogal_cevap)
 
     await bot.process_commands(message)
 
