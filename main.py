@@ -66,15 +66,14 @@ async def on_message(message):
         prompt = f"Sen 'Yaşayan Şehir' adlı Discord sunucusunun yapay zeka ruhusun. Esprili, samimi, insanları sunucuda tutmak isteyen ve sıcakkanlı bir karaktersin. Kullanıcının mesajına kısa ve dikkat çekici bir yanıt ver. Kullanıcı mesajı: {message.content}"
         
         try:
-            # Güncel model adı kullanılıyor
             response = gemini_client.models.generate_content(
-                model='gemini-3.8-flash',
+                model='gemini-1.5-flash',
                 contents=prompt
             )
             await message.reply(response.text)
         except Exception as e:
-            print(f"Hata: {e}")
-            await message.reply(f"⚠️ **Hata Detayı:** {e}")
+            print(f"Hata Detayı: {e}")
+            await message.reply(f"⚠️ **Hata:** {e}")
 
     await bot.process_commands(message)
 
