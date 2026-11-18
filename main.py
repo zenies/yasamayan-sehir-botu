@@ -64,6 +64,14 @@ async def on_ready():
 
     otomatik_sohbet_dongusu.start()
 
+# Yeni üye katıldığında otomatik karşılama
+@bot.event
+async def on_member_join(member):
+    for channel in member.guild.text_channels:
+        if "genel" in channel.name.lower():
+            await channel.send(f"🎉 Hey {member.mention}, **Yaşayan Şehir**'e hoş geldin! Sokağımıza taze kan geldi, kahveler benden!")
+            break
+
 @tasks.loop(hours=2)
 async def otomatik_sohbet_dongusu():
     for guild in bot.guilds:
