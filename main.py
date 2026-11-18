@@ -3,6 +3,22 @@ import random
 import discord
 from discord.ext import commands, tasks
 from google import genai
+from threading import Thread
+from flask import Flask
+
+# Ücretsiz web sunucusu (Render'ın uyumaması ve ücretsiz host etmesi için)
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Yaşayan Şehir Botu Aktif ve 7/24 Görevde!"
+
+def run_web():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run_web)
+    t.start()
 
 # Bot ayarları
 intents = discord.Intents.default()
@@ -11,14 +27,13 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Gemini AI istemci ayarı (Render ortam değişkeninden alacak)
+# Gemini AI istemci ayarı
 gemini_client = None
 if os.environ.get("GEMINI_API_KEY"):
     gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-# Otomatik sohbet/mesaj listesi (Kimse konuşmasa bile botun atacağı mesajlar)
 OTOMATİK_MESAJLAR = [
-    "Hey şehir halkı! Bugünka enerji seviyeniz nasıl?",
+    "Hey şehir halkı! Bugün enerji seviyeniz nasıl?",
     "Yaşayan Şehir şu an çok sessiz... Kahveler mi yudumlanıyor yoksa herkes saklanıyor mu?",
     "Şehrin sokaklarında dolaşırken ilginç bir şey fark eden var mı?",
     "Günün sorusu: Bu şehre katıldığınızdan beri en çılgın anınız ne oldu?",
@@ -27,13 +42,12 @@ OTOMATİK_MESAJLAR = [
 
 @bot.event
 async def on_ready():
-    print(f"{bot.user.name} şehre ayak basdı ve sistemler aktif!")
+    print(f"{bot.user.name} şehre ayak bastı ve sistemler aktif!")
     otomatik_sohbet_dongusu.start()
 
-@tasks.loop(hours=2) # Her 2 saatte bir şehirde sessizlik olursa otomatik mesaj atar
+@tasks.loop(hours=2)
 async def otomatik_sohbet_dongusu():
     for guild in bot.guilds:
-        # Genel veya sohbet kanalını bulmaya çalışır
         for channel in guild.text_channels:
             if "sohbet" in channel.name.lower() or "genel" in channel.name.lower() or "chat" in channel.name.lower():
                 secilen_mesaj = random.choice(OTOMATİK_MESAJLAR)
@@ -45,7 +59,6 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Eğer bot etiketlenirse veya bir mesaj yazılırsa Gemini AI ile akıllıca cevap verme
     if bot.user.mentioned_in(message) and gemini_client:
         prompt = f"Sen 'Yaşayan Şehir' adlı Discord sunucusunun yapay zeka ruhusun. Esprili, samimi, insanları sunucuda tutmak isteyen ve sıcakkanlı bir karaktersin. Kullanıcının mesajına kısa ve dikkat çekici bir yanıt ver. Kullanıcı mesajı: {message.content}"
         try:
@@ -59,9 +72,11 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# Botu Çalıştır (Token Render gizli alanından gelecek)
-TOKEN = os.environ.get("DISCORD_TOKEN")
-if TOKEN:
-    bot.run(TOKEN)
-else:
-    print("HATA: Discord Token bulunamadı!")
+# Önce web sunucusunu başlat, ardından botu çalıştır
+if __name__ == "__main__":
+    keep_alive()
+    TOKEN = os.environ.get("DISCORD_TOKEN")
+    if TOKEN:
+        bot.run(TOKEN)
+    else:
+        print("HATA: Discord Token bulunamadı!")
