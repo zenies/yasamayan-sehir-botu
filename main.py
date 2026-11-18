@@ -6,12 +6,12 @@ from google import genai
 from threading import Thread
 from flask import Flask
 
-# Ücretsiz web sunucusu
+# Ücretsiz web sunucusu (UptimeRobot için)
 app = Flask('')
 
 @app.route('/')
 def home():
-    return "Yaşayan Şehir Botu Aktif ve 7/24 Görevde!"
+    return "Yaşayan Şehir Botu Tam Yetkili ve 7/24 Görevde!"
 
 def run_web():
     app.run(host='0.0.0.0', port=8080)
@@ -20,7 +20,7 @@ def keep_alive():
     t = Thread(target=run_web)
     t.start()
 
-# Bot ayarları
+# Bot ayarları ve yetkileri
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
@@ -31,6 +31,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 api_key = os.environ.get("GEMINI_API_KEY")
 gemini_client = genai.Client(api_key=api_key) if api_key else None
 
+# Botun kendi kendine atacağı rastgele yaşamsal mesajlar
 OTOMATİK_MESAJLAR = [
     "Hey şehir halkı! Bugün enerji seviyeniz nasıl?",
     "Yaşayan Şehir şu an çok sessiz... Kahveler mi yudumlanıyor yoksa herkes saklanıyor mu?",
@@ -39,6 +40,7 @@ OTOMATİK_MESAJLAR = [
     "Sessizliği bozmak benden! Kimler burada, bir ses verin bakalım!"
 ]
 
+# Google yoğunluk (503) verdiğinde botun yapacağı esprili kaçışlar
 YOGUNLUK_CEVAPLARI = [
     "Kahve molasındayım, birazdan buradayım dostum! ☕",
     "Şehrin altyapısında ufak bir internet kopması oldu, dalgınlığıma ver. ⚡",
@@ -48,9 +50,9 @@ YOGUNLUK_CEVAPLARI = [
 
 @bot.event
 async def on_ready():
-    print(f"{bot.user.name} şehre ayak bastı ve sistemler aktif!")
+    print(f"{bot.user.name} şehre ayak bastı ve sistemler tam gaz aktif!")
     
-    # Otomatik kanal oluşturma kontrolü
+    # Sunucuya bağlandığı an eksik kanalları ve kategoriyi kendi kurar
     for guild in bot.guilds:
         existing_channels = [c.name for c in guild.channels]
         category = discord.utils.get(guild.categories, name="🏛️ YAŞAYAN ŞEHİR")
@@ -64,7 +66,7 @@ async def on_ready():
 
     otomatik_sohbet_dongusu.start()
 
-# Yeni üye katıldığında otomatik karşılama
+# Yeni üye gelince otomatik karşılar
 @bot.event
 async def on_member_join(member):
     for channel in member.guild.text_channels:
@@ -72,6 +74,7 @@ async def on_member_join(member):
             await channel.send(f"🎉 Hey {member.mention}, **Yaşayan Şehir**'e hoş geldin! Sokağımıza taze kan geldi, kahveler benden!")
             break
 
+# 2 saatte bir kendi kendine sohbeti canlandırır
 @tasks.loop(hours=2)
 async def otomatik_sohbet_dongusu():
     for guild in bot.guilds:
@@ -81,12 +84,12 @@ async def otomatik_sohbet_dongusu():
                 await channel.send(f"🤖 **[Şehir Sesi]** {secilen_mesaj}")
                 break
 
+# Etiketlendiğinde yapay zeka ile akıllı sohbet eder
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Bot etiketlendiğinde yapay zeka devreye girer
     if bot.user.mentioned_in(message):
         if not gemini_client:
             await message.reply("⚠️ API anahtarı okunamadı.")
@@ -106,7 +109,7 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# Özel Eğlence Komutu: !sehradurumu
+# Sunucu durumunu gösteren özel komut
 @bot.command(name="sehradurumu")
 async def sehradurumu(ctx):
     durumlar = [
