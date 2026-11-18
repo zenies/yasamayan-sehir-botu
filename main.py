@@ -50,21 +50,17 @@ YOGUNLUK_CEVAPLARI = [
 async def on_ready():
     print(f"{bot.user.name} şehre ayak bastı ve sistemler aktif!")
     
-    # Bot açıldığında sunucuda eksik kanalları otomatik kurma görevi
+    # Otomatik kanal oluşturma kontrolü
     for guild in bot.guilds:
         existing_channels = [c.name for c in guild.channels]
-        
-        # Kategori yoksa oluştur
         category = discord.utils.get(guild.categories, name="🏛️ YAŞAYAN ŞEHİR")
         if not category:
             category = await guild.create_category("🏛️ YAŞAYAN ŞEHİR")
             
-        # Kanalları kontrol et ve yoksa yarat
         required_channels = ["genel-sohbet", "oyun-odası", "itiraf-ve-sohbet"]
         for ch_name in required_channels:
             if ch_name not in existing_channels:
                 await guild.create_text_channel(ch_name, category=category)
-                print(f"Oluşturulan kanal: {ch_name}")
 
     otomatik_sohbet_dongusu.start()
 
@@ -72,7 +68,7 @@ async def on_ready():
 async def otomatik_sohbet_dongusu():
     for guild in bot.guilds:
         for channel in guild.text_channels:
-            if "sohbet" in channel.name.lower() or "genel" in channel.name.lower():
+            if "genel" in channel.name.lower():
                 secilen_mesaj = random.choice(OTOMATİK_MESAJLAR)
                 await channel.send(f"🤖 **[Şehir Sesi]** {secilen_mesaj}")
                 break
@@ -82,6 +78,7 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
+    # Bot etiketlendiğinde yapay zeka devreye girer
     if bot.user.mentioned_in(message):
         if not gemini_client:
             await message.reply("⚠️ API anahtarı okunamadı.")
@@ -100,6 +97,17 @@ async def on_message(message):
             await message.reply(dogal_cevap)
 
     await bot.process_commands(message)
+
+# Özel Eğlence Komutu: !sehradurumu
+@bot.command(name="sehradurumu")
+async def sehradurumu(ctx):
+    durumlar = [
+        "🏙️ Şehirde hava sakin, herkes kahvesini yudumluyor.",
+        "⚡ Enerji hatlarında ufak bir hareketlilik var, macera kapıda!",
+        "🔥 Sokaklar bugün fazlasıyla aktif, ortalık yanıyor!",
+        "🌙 Şehir gece modunda, sakin ama gizemli..."
+    ]
+    await ctx.send(random.choice(durumlar))
 
 if __name__ == "__main__":
     keep_alive()
